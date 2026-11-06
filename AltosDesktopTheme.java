@@ -96,27 +96,27 @@ public final class AltosDesktopTheme {
 		for (String key : nativeColors) UIManager.put(key, null);
 	}
 
-	public static final Color BACKGROUND = new Color(0x0B1118);
-	public static final Color SURFACE = new Color(0x121A24);
-	public static final Color SURFACE_DARK = new Color(0x1A2530);
-	public static final Color TOPBAR = new Color(0x0A1016);
-	public static final Color SIDEBAR = new Color(0x111923);
-	public static final Color SIDEBAR_TEXT = new Color(0xD4DEE8);
-	public static final Color SIDEBAR_MUTED = new Color(0x9CACBD);
-	public static final Color TEXT = new Color(0xFFFFFF);
-	public static final Color MUTED_TEXT = new Color(0xA9BAC9);
-	public static final Color ICON = new Color(0x718498);
-	public static final Color BORDER = new Color(0x324253);
-	public static final Color ACCENT = new Color(0x2F7FEA);
-	public static final Color ACCENT_LIGHT = new Color(0x3A8DFF);
-	public static final Color ACCENT_DARK = new Color(0x1B5DB5);
-	public static final Color SUCCESS = new Color(0x16C784);
-	public static final Color WARNING = new Color(0xFF8A00);
-	public static final Color ORANGE = new Color(0xFF8A00);
-	public static final Color PURPLE = new Color(0x5D35E8);
-	public static final Color DANGER = new Color(0xF05252);
-	public static final Color TABLE = new Color(0x0F171F);
-	public static final Color TABLE_ALT = new Color(0x16222C);
+	public static final Color BACKGROUND = new Color(0x1D1D1D);
+	public static final Color SURFACE = new Color(0x242424);
+	public static final Color SURFACE_DARK = new Color(0x191919);
+	public static final Color TOPBAR = new Color(0x171717);
+	public static final Color SIDEBAR = new Color(0x191919);
+	public static final Color SIDEBAR_TEXT = new Color(0xE2E2E2);
+	public static final Color SIDEBAR_MUTED = new Color(0x929292);
+	public static final Color TEXT = new Color(0xF5F5F5);
+	public static final Color MUTED_TEXT = new Color(0xA0A0A0);
+	public static final Color ICON = new Color(0x898989);
+	public static final Color BORDER = new Color(0x3A3A3A);
+	public static final Color ACCENT = new Color(0x1683FF);
+	public static final Color ACCENT_LIGHT = new Color(0x4DA1FF);
+	public static final Color ACCENT_DARK = new Color(0x174A7D);
+	public static final Color SUCCESS = new Color(0x3CCB88);
+	public static final Color WARNING = new Color(0xF0A94B);
+	public static final Color ORANGE = new Color(0xF0A94B);
+	public static final Color PURPLE = new Color(0x8B76D9);
+	public static final Color DANGER = new Color(0xE05A5A);
+	public static final Color TABLE = new Color(0x1B1B1B);
+	public static final Color TABLE_ALT = new Color(0x222222);
 
 	private AltosDesktopTheme() {
 	}
@@ -169,7 +169,7 @@ public final class AltosDesktopTheme {
 			else if (button.getModel().isPressed()) fill = fill.darker();
 			else if (button.getModel().isRollover()) fill = fill.brighter();
 			int inset = dp(1);
-			int radius = dp(8);
+			int radius = dp(Boolean.TRUE.equals(button.getClientProperty("altos.theme.flat")) ? 20 : 7);
 			if (Boolean.TRUE.equals(button.getClientProperty("altos.theme.flat"))) {
 				/* Opaque sidebar rows must repaint every pixel. An inset rounded
 				 * fill leaves stale native-LAF border fragments at the edges. */
@@ -333,13 +333,17 @@ public final class AltosDesktopTheme {
 			setUI(new BasicTabbedPaneUI() {
 				@Override protected void paintTabBackground(Graphics g, int placement, int index,
 					int x, int y, int width, int height, boolean selected) {
-					g.setColor(selected ? ACCENT : SURFACE);
+					g.setColor(selected ? SURFACE : BACKGROUND);
 					g.fillRect(x, y, width, height);
 				}
 				@Override protected void paintTabBorder(Graphics g, int placement, int index,
 					int x, int y, int width, int height, boolean selected) {
 					g.setColor(BORDER);
 					g.drawRect(x, y, width - 1, height - 1);
+					if (selected) {
+						g.setColor(ACCENT);
+						g.fillRect(x + 1, y + height - dp(2), Math.max(0, width - 2), dp(2));
+					}
 				}
 				@Override protected void paintContentBorder(Graphics g, int placement, int selectedIndex) {
 					g.setColor(BORDER);

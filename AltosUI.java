@@ -101,8 +101,8 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 		item.setPreferredSize(new Dimension(AltosDesktopTheme.dp(200), AltosDesktopTheme.dp(36)));
 		item.setBorder(new EmptyBorder(AltosDesktopTheme.dp(8), AltosDesktopTheme.dp(16), AltosDesktopTheme.dp(8), AltosDesktopTheme.dp(8)));
 		item.setFont(AltosDesktopTheme.font(selected ? Font.BOLD : Font.PLAIN, 12));
-		item.setForeground(selected ? Color.WHITE : AltosDesktopTheme.SIDEBAR_TEXT);
-		item.setBackground(selected ? AltosDesktopTheme.ACCENT : AltosDesktopTheme.SIDEBAR);
+		item.setForeground(selected ? AltosDesktopTheme.BACKGROUND : AltosDesktopTheme.SIDEBAR_TEXT);
+		item.setBackground(selected ? AltosDesktopTheme.TEXT : AltosDesktopTheme.SIDEBAR);
 		item.setHorizontalAlignment(SwingConstants.LEFT);
 		item.setFocusPainted(false);
 		item.putClientProperty("altos.theme.flat", Boolean.TRUE);
@@ -121,8 +121,8 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 			boolean selected = entry.getKey().equals(page) ||
 				("Maps".equals(page) && "Offline maps".equals(entry.getKey()));
 			JButton button = entry.getValue();
-			button.setBackground(selected ? AltosDesktopTheme.ACCENT : AltosDesktopTheme.SIDEBAR);
-			button.setForeground(selected ? Color.WHITE : AltosDesktopTheme.SIDEBAR_TEXT);
+			button.setBackground(selected ? AltosDesktopTheme.TEXT : AltosDesktopTheme.SIDEBAR);
+			button.setForeground(selected ? AltosDesktopTheme.BACKGROUND : AltosDesktopTheme.SIDEBAR_TEXT);
 			button.setFont(AltosDesktopTheme.font(selected ? Font.BOLD : Font.PLAIN, 12));
 		}
 	}
@@ -130,7 +130,9 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 	private JPanel navigation() {
 		JPanel nav = new JPanel(new BorderLayout());
 		nav.setBackground(AltosDesktopTheme.SIDEBAR);
-		nav.setBorder(new EmptyBorder(AltosDesktopTheme.dp(18), AltosDesktopTheme.dp(10), AltosDesktopTheme.dp(12), AltosDesktopTheme.dp(10)));
+		nav.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(0, 0, 0, 1, AltosDesktopTheme.BORDER),
+			new EmptyBorder(AltosDesktopTheme.dp(18), AltosDesktopTheme.dp(10), AltosDesktopTheme.dp(12), AltosDesktopTheme.dp(10))));
 		nav.setPreferredSize(new Dimension(AltosDesktopTheme.dp(214), AltosDesktopTheme.dp(0)));
 		JPanel menu = new JPanel();
 		menu.setOpaque(false);
@@ -187,7 +189,9 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 	private JPanel sessionBar() {
 		JPanel bar = new JPanel(new BorderLayout());
 		bar.setBackground(AltosDesktopTheme.TOPBAR);
-		bar.setBorder(new EmptyBorder(AltosDesktopTheme.dp(6), AltosDesktopTheme.dp(14), AltosDesktopTheme.dp(6), AltosDesktopTheme.dp(14)));
+		bar.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(0, 0, 1, 0, AltosDesktopTheme.BORDER),
+			new EmptyBorder(AltosDesktopTheme.dp(6), AltosDesktopTheme.dp(14), AltosDesktopTheme.dp(6), AltosDesktopTheme.dp(14))));
 		bar.add(label("ALTUS METRUM  /  TELEMEGA GROUND STATION",
 			10, Font.PLAIN, AltosDesktopTheme.MUTED_TEXT), BorderLayout.WEST);
 		bar.add(label("ALTOS WINDOWS DESKTOP", 10, Font.BOLD, AltosDesktopTheme.MUTED_TEXT), BorderLayout.EAST);

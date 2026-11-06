@@ -51,6 +51,7 @@ Run the modern interface independently without altering your installed AltOS app
 * **High-DPI & Theme Support:**
   * UI scaling for modern high-resolution displays.
   * High-contrast labels on map overlays for legibility over both dark and light satellite tiles.
+  * A neutral charcoal palette, outlined panels, rounded navigation, and restrained blue accents inspired by SDSHub.
   * Theme integration with Windows and Nimbus Look & Feel preferences.
 
 ---
