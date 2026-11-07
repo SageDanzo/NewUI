@@ -1,4 +1,6 @@
 /build/
+/launcher/bin/
+/launcher/obj/
 /recovery-bridge/bin/
 /recovery-bridge/obj/
 /recovery-bridge/publish/

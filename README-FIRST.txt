@@ -38,6 +38,11 @@ tab open behind the application.
 If AltOS does not open, double-click Run-AltOS-Diagnostics.bat to see the error
 message and copy it for troubleshooting.
 
+For a portable package that does not require Java on the target computer,
+install a 64-bit Java 8 JDK and the .NET 8 SDK, then run
+Build-AltOS-Standalone.bat. Copy the complete
+build\AltOS-Modern-Portable folder and launch AltOS-Modern.exe from it.
+
 Without the switch above, the original installed AltOS shortcut is unaffected.
 This separate launcher uses altosui-redesigned.jar. The original altosui-fat.jar
 is included in the extracted folder for compatibility and backup verification.
@@ -95,10 +100,10 @@ Included behavior:
   displays can scroll the tool cards vertically. The channel scanner can open
   the selected receiver. If Windows display scaling still makes the interface
   too small, adjust the system's Display > Scale setting and restart AltOS.
-- The iPhone recovery app exchanges phone GPS and live rocket telemetry over a
+- The phone recovery app exchanges phone GPS and live rocket telemetry over a
   recovery-only BLE link. Keep it open in the foreground. The BLE service
   provides no arming, firing, or flight-computer configuration commands. See
-  recovery\BLE-PROTOCOL.md and recovery\iOS\README.md.
+  recovery\BLE-PROTOCOL.md and recovery\android\README.md.
 - Java source for the desktop UI is included as AltosUI.java,
   AltosDesktopTheme.java, and AltosRecoveryLink.java.
 - Live flight monitoring.

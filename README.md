@@ -33,6 +33,15 @@ Run the modern interface independently without altering your installed AltOS app
 
 *If AltOS does not launch, run `Run-AltOS-Diagnostics.bat` to output the diagnostic error log.*
 
+### Portable Package (Bundled Java Runtime)
+To build a portable Windows x64 package that does not require Java to be installed on the target computer:
+
+1. Install a **64-bit Java 8 JDK** and the **.NET 8 SDK**.
+2. Run `Build-AltOS-Standalone.bat`.
+3. Copy the complete `build\AltOS-Modern-Portable` folder to the target computer and launch `AltOS-Modern.exe`.
+
+The package includes the Java runtime, AltOS files, and BLE recovery bridge. Keep the executable and all adjacent files together.
+
 ---
 
 ## Key Features
@@ -52,10 +61,12 @@ Run the modern interface independently without altering your installed AltOS app
 * **Phone Recovery Link:**
   * A foreground iPhone or Android app and Windows BLE bridge exchange phone GPS and live rocket telemetry.
   * Recovery data only: there are no BLE commands for arming, firing, or configuring the flight computer.
-  * Requires a BLE-capable Windows 10 (version 2004 or newer) computer and the phone app open in the foreground. See [the BLE protocol](recovery/BLE-PROTOCOL.md), [the iOS app instructions](recovery/iOS/README.md), and [the Android app instructions](recovery/android/README.md).
+  * Requires a BLE-capable Windows 10 (version 2004 or newer) computer and the phone app open in the foreground. See [the BLE protocol](recovery/BLE-PROTOCOL.md) and [the Android app instructions](recovery/android/README.md).
 * **Streamlined Navigation:**
   * Cleaned utility menu (removed unused legacy items like Kalman navigation).
   * Direct callsign editing and receiver handover from Channel Scanner to Live Monitor.
+* **Voice Alerts:**
+  * Uses the original FreeTTS voice with lower pitch and measured pacing for calmer, cockpit-inspired callouts.
 * **High-DPI & Theme Support:**
   * UI scaling for modern high-resolution displays.
   * High-contrast labels on map overlays for legibility over both dark and light satellite tiles.
@@ -73,7 +84,6 @@ Run the modern interface independently without altering your installed AltOS app
 ├── altosui-redesigned.jar            # Redesigned UI executable JAR
 ├── altosui-fat.jar                   # Original AltOS JAR (included for fallback/verification)
 ├── recovery-bridge/                  # Windows BLE GATT client source and build script
-├── recovery/iOS/                     # iPhone recovery app source and Xcode project
 ├── recovery/android/                 # Android recovery app source and Gradle project
 ├── recovery/BLE-PROTOCOL.md          # Shared versioned BLE protocol
 ├── Build-AltOS-Modern.bat            # Compile the Java UI source into the redesigned JAR

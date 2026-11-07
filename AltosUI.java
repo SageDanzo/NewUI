@@ -21,7 +21,7 @@ import org.altusmetrum.altosuilib_14.*;
 /** TeleMega-focused Windows desktop entry point for AltOS 1.9.x. */
 public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 
-	public AltosVoice voice = new AltosVoice();
+	public AltosVoice voice = new AltosFlightVoice();
 	private Container pane;
 	private JTabbedPane workspace;
 	private AltosModernMapPreload maps;

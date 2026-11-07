@@ -1,6 +1,6 @@
 # BLE recovery link protocol
 
-This protocol connects the Windows AltOS ground station to the iOS recovery
+This protocol connects the Windows AltOS ground station to a phone recovery
 app. The phone advertises a BLE GATT service while the app is open; Windows
 scans for and connects to that service.
 
@@ -22,7 +22,7 @@ All UUIDs are custom 128-bit UUIDs:
 | Desktop to phone | `D4A10001-3B7A-4C5F-9A13-6C7E4B201000` | Write with response |
 | Phone to desktop | `D4A10002-3B7A-4C5F-9A13-6C7E4B201000` | Notify |
 
-The iPhone is the GATT peripheral and advertises the recovery service. The
+The phone is the GATT peripheral and advertises the recovery service. The
 Windows computer is the GATT central. The phone sends its location by
 notifying `Phone to desktop`; Windows sends rocket telemetry by writing
 `Desktop to phone`.
