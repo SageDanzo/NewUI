@@ -1,11 +1,17 @@
 # Android recovery app
 
-This is the Android companion to the iOS recovery app. Open `recovery/android`
-in Android Studio, allow it to use Gradle 8.9 and Android Gradle
-Plugin 8.7.3, then build and run the `app` configuration on a physical Android
-device running Android 8.0 (API 26) or newer. The device must support BLE
-peripheral advertising; not all Android phones do. An Android SDK platform 35
-and JDK 17 are required by the build plugin.
+This is the Android companion to the iOS recovery app. Open the
+`recovery/android` directory in Android Studio and sync the Gradle project.
+The checked-in Gradle wrapper selects Gradle 8.9 and Android Gradle Plugin
+8.7.3. You can also build from the repository root with
+`cd recovery\android && gradlew.bat assembleDebug` on Windows or
+`cd recovery/android && bash ./gradlew assembleDebug` on macOS/Linux. An
+Android SDK platform 35 and JDK 17 are required.
+
+The root `codemagic.yaml` builds the debug APK on Codemagic. To run the app,
+install the `app/build/outputs/apk/debug/app-debug.apk` artifact on a physical
+Android device running Android 8.0 (API 26) or newer. The device must support
+BLE peripheral advertising; not all Android phones do.
 
 On first run, allow **Nearby devices** (Bluetooth) and **Location** access, and
 turn on Bluetooth and device location. Keep the app open in the foreground

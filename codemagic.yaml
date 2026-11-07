@@ -1,0 +1,14 @@
+workflows:
+  android-recovery:
+    name: Android recovery app
+    max_build_duration: 60
+    instance_type: linux_x2
+    environment:
+      java: 17
+    scripts:
+      - name: Build debug APK
+        script: |
+          cd "$CM_BUILD_DIR/recovery/android"
+          bash ./gradlew --no-daemon --stacktrace assembleDebug
+    artifacts:
+      - recovery/android/app/build/outputs/apk/debug/*.apk
