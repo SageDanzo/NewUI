@@ -46,6 +46,7 @@ Run the modern interface independently without altering your installed AltOS app
   * Real-time GPS stream monitoring or recorded telemetry playback.
   * WGS84 east/north/up conversion relative to the first valid GPS fix, with reported GPS altitude and coordinates visible for each fix.
   * Orbit, zoom, click to select a fix, use arrow keys, and reset to top or side view. Replay uses recorded fix times with selectable 1×, 5×, and 20× speed; missing telemetry stays visibly disconnected.
+  * Use **GROUND → USGS aerial** to show an aerial image of the first GPS fix beneath the 3D route, or choose **Grid** to return to the plain ground plane. Imagery is a flat reference plane, not elevation terrain. A connection is needed for tiles that have not been cached; the grid remains visible while imagery loads.
   * Robust handling for dateline crossings and out-of-order GPS packets.
 * **Streamlined Navigation:**
   * Cleaned utility menu (removed unused legacy items like Kalman navigation).

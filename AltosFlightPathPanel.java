@@ -4,6 +4,8 @@ package altosui;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Point2D;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -40,6 +42,7 @@ public final class AltosFlightPathPanel extends JPanel {
     private final JButton reset = AltosDesktopTheme.button("Reset view");
     private final JButton topView = AltosDesktopTheme.button("Top view");
     private final JButton sideView = AltosDesktopTheme.button("Side view");
+    private final JComboBox<String> ground = AltosDesktopTheme.combo(new String[] { "Grid", "USGS aerial" });
     private final JComboBox<String> speed = AltosDesktopTheme.combo(new String[] { "1×", "5×", "20×" });
     private final Timer timer;
     private boolean following = true;
@@ -50,6 +53,7 @@ public final class AltosFlightPathPanel extends JPanel {
     private double playbackTime;
     private long previousTick;
     private Runnable selectionListener;
+    private AltosModernStreetMap groundMap;
 
     private static JLabel label(String value, int size, boolean bold, Color color) {
         JLabel label = new JLabel(value);
@@ -161,6 +165,7 @@ public final class AltosFlightPathPanel extends JPanel {
 
     public void loadRecorded(List<AltosGPSTimeValue> values, String name) {
         timer.stop();
+        closeGroundMap();
         play.setText("Play flight");
         fixes.clear();
         maxUp = maxAbsUp = maxRange = 0;
@@ -186,6 +191,7 @@ public final class AltosFlightPathPanel extends JPanel {
 
     public void startLive() {
         timer.stop();
+        closeGroundMap();
         play.setText("Play flight");
         fixes.clear();
         maxUp = maxAbsUp = maxRange = 0;
@@ -206,7 +212,13 @@ public final class AltosFlightPathPanel extends JPanel {
         connect.addActionListener(e -> action.run());
     }
 
-    public void stop() { timer.stop(); }
+    public void stop() { timer.stop(); closeGroundMap(); }
+
+    private void closeGroundMap() {
+        if (groundMap != null) groundMap.close();
+        groundMap = null;
+        canvas.clearGroundImage();
+    }
 
     private void updateReadout() {
         if (fixes.isEmpty()) {
@@ -284,6 +296,9 @@ public final class AltosFlightPathPanel extends JPanel {
         playback.add(reset);
         playback.add(topView);
         playback.add(sideView);
+        ground.setToolTipText("Switch the flat ground plane between the grid and USGS aerial at the first GPS fix");
+        playback.add(label("GROUND", 11, true, AltosDesktopTheme.MUTED_TEXT));
+        playback.add(ground);
         transport.add(playback, BorderLayout.NORTH);
         transport.add(timeline, BorderLayout.CENTER);
         transport.add(live, BorderLayout.EAST);
@@ -330,13 +345,22 @@ public final class AltosFlightPathPanel extends JPanel {
             timeline.setValue(Math.max(0, fixes.size() - 1));
         });
         reset.addActionListener(e -> canvas.resetView());
-        topView.addActionListener(e -> canvas.setView(0, 0.08));
-        sideView.addActionListener(e -> canvas.setView(-0.7, 1.35));
+        topView.addActionListener(e -> canvas.setView(0, 1.35));
+        sideView.addActionListener(e -> canvas.setView(-0.7, 0.25));
+        ground.addActionListener(e -> {
+            if (ground.getSelectedIndex() == 0) closeGroundMap();
+            canvas.repaint();
+        });
     }
 
     private final class PathCanvas extends JPanel {
+        private static final int GROUND_SIZE = 512;
         private double yaw = -0.7, elevation = 0.52, zoom = 1;
         private Point drag;
+        private BufferedImage groundImage;
+        private String groundStatus = "";
+
+        void clearGroundImage() { groundImage = null; groundStatus = ""; repaint(); }
 
         void setView(double angle, double tilt) {
             yaw = angle;
@@ -409,6 +433,71 @@ public final class AltosFlightPathPanel extends JPanel {
             g.drawLine((int)a.x, (int)a.y, (int)b.x, (int)b.y);
         }
 
+        private double[] groundMetersPerPixel(int level) {
+            double latitude = Math.toRadians(originLat);
+            double sin = Math.sin(latitude);
+            double eccentricity = 0.00669437999014;
+            double denominator = 1 - eccentricity * sin * sin;
+            double majorRadius = 6378137.0;
+            double eastRadius = majorRadius / Math.sqrt(denominator) + originAlt;
+            double northRadius = majorRadius * (1 - eccentricity) / Math.pow(denominator, 1.5) + originAlt;
+            double radiansPerPixel = 2 * Math.PI * Math.cos(latitude) / (256.0 * (1 << level));
+            return new double[] { eastRadius * radiansPerPixel, northRadius * radiansPerPixel };
+        }
+
+        /** Paint USGS tiles onto the plane at the first GPS fix, without implying terrain elevation. */
+        private boolean paintAerialGround(Graphics2D g, double scale, double cx, double cy) {
+            groundStatus = "";
+            if (ground.getSelectedIndex() != 1 || fixes.isEmpty()) return false;
+            if (originLat < 24 || originLat > 50 || originLon < -126 || originLon > -66) {
+                groundStatus = "USGS aerial unavailable at this flight location · grid shown";
+                return false;
+            }
+            int level = 16;
+            double[] meters = groundMetersPerPixel(level);
+            double needed = Math.max(500, maxRange * 2.8);
+            while (level > 0 && GROUND_SIZE * Math.min(meters[0], meters[1]) < needed)
+                meters = groundMetersPerPixel(--level);
+            if (groundMap == null) {
+                groundMap = new AltosModernStreetMap(true);
+                groundMap.setImageryOnly(new Runnable() {
+                    public void run() { clearGroundImage(); }
+                });
+                groundMap.setSize(GROUND_SIZE, GROUND_SIZE);
+                groundMap.center(originLat, originLon);
+                groundMap.setZoom(level);
+            } else if (groundMap.getZoom() != level) {
+                groundMap.setZoom(level);
+                groundImage = null;
+            }
+            if (groundImage == null) {
+                groundImage = new BufferedImage(GROUND_SIZE, GROUND_SIZE, BufferedImage.TYPE_INT_RGB);
+                Graphics2D tiles = groundImage.createGraphics();
+                groundMap.paint(tiles);
+                tiles.dispose();
+            }
+            if (!groundMap.hasVisibleImagery()) {
+                groundStatus = groundMap.imageryDelayed()
+                    ? "USGS aerial delayed · grid shown" : "Loading USGS aerial · grid shown";
+                return false;
+            }
+            double east = meters[0] * GROUND_SIZE / 2.0;
+            double north = meters[1] * GROUND_SIZE / 2.0;
+            Point2D.Double topLeft = project(-east, north, 0, scale, cx, cy);
+            Point2D.Double topRight = project(east, north, 0, scale, cx, cy);
+            Point2D.Double bottomLeft = project(-east, -north, 0, scale, cx, cy);
+            AffineTransform transform = new AffineTransform(
+                (topRight.x - topLeft.x) / GROUND_SIZE, (topRight.y - topLeft.y) / GROUND_SIZE,
+                (bottomLeft.x - topLeft.x) / GROUND_SIZE, (bottomLeft.y - topLeft.y) / GROUND_SIZE,
+                topLeft.x, topLeft.y);
+            Graphics2D plane = (Graphics2D) g.create();
+            plane.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            plane.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, .86f));
+            plane.drawImage(groundImage, transform, null);
+            plane.dispose();
+            return true;
+        }
+
         protected void paintComponent(Graphics graphics) {
             super.paintComponent(graphics);
             Graphics2D g = (Graphics2D) graphics.create();
@@ -428,15 +517,27 @@ public final class AltosFlightPathPanel extends JPanel {
             }
             double scale = plotScale(w, h);
             double cx = w * .5, cy = h * .64;
-            g.setStroke(new BasicStroke(1));
-            g.setColor(new Color(0x243443));
-            double grid = Math.max(50, maxRange * 1.1);
-            for (int i = -2; i <= 2; i++) {
-                double t = grid * i / 2.0;
-                segment(g, project(-grid, t, 0, scale, cx, cy), project(grid, t, 0, scale, cx, cy));
-                segment(g, project(t, -grid, 0, scale, cx, cy), project(t, grid, 0, scale, cx, cy));
+            boolean aerialBase = paintAerialGround(g, scale, cx, cy);
+            if (!aerialBase) {
+                g.setStroke(new BasicStroke(1));
+                g.setColor(new Color(0x243443));
+                double grid = Math.max(50, maxRange * 1.1);
+                for (int i = -2; i <= 2; i++) {
+                    double t = grid * i / 2.0;
+                    segment(g, project(-grid, t, 0, scale, cx, cy), project(grid, t, 0, scale, cx, cy));
+                    segment(g, project(t, -grid, 0, scale, cx, cy), project(t, grid, 0, scale, cx, cy));
+                }
             }
             int end = Math.min(fixes.size() - 1, timeline.getValue());
+            if (aerialBase) {
+                g.setStroke(new BasicStroke(5.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g.setColor(new Color(0, 0, 0, 200));
+                for (int i = 1; i < fixes.size(); i++) {
+                    Fix a = fixes.get(i - 1), b = fixes.get(i);
+                    if (continuous(a, b)) segment(g, project(a.east, a.north, a.up, scale, cx, cy),
+                        project(b.east, b.north, b.up, scale, cx, cy));
+                }
+            }
             g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
             for (int i = 1; i < fixes.size(); i++) {
                 Fix a = fixes.get(i - 1), b = fixes.get(i);
@@ -452,6 +553,11 @@ public final class AltosFlightPathPanel extends JPanel {
             Point2D.Double start = project(first.east, first.north, first.up, scale, cx, cy);
             g.setColor(AltosDesktopTheme.TEXT);
             g.fillOval((int)start.x - 4, (int)start.y - 4, 8, 8);
+            if (aerialBase) {
+                g.setColor(new Color(0, 0, 0, 230));
+                g.drawString("FIRST GPS FIX", (int)start.x + 11, (int)start.y + 16);
+            }
+            g.setColor(AltosDesktopTheme.TEXT);
             g.drawString("FIRST GPS FIX", (int)start.x + 10, (int)start.y + 15);
             Point2D.Double p = project(selected.east, selected.north, selected.up, scale, cx, cy);
             Point2D.Double base = project(selected.east, selected.north, 0, scale, cx, cy);
@@ -462,10 +568,24 @@ public final class AltosFlightPathPanel extends JPanel {
             g.fillOval((int)p.x - 6, (int)p.y - 6, 12, 12);
             g.setColor(AltosDesktopTheme.TEXT);
             g.setFont(AltosDesktopTheme.font(Font.BOLD, 12));
+            if (aerialBase) {
+                g.setColor(new Color(0, 0, 0, 230));
+                g.drawString(String.format(Locale.US, "%+.0f m", selected.up), (int)p.x + 12, (int)p.y - 7);
+            }
+            g.setColor(AltosDesktopTheme.TEXT);
             g.drawString(String.format(Locale.US, "%+.0f m", selected.up), (int)p.x + 11, (int)p.y - 8);
             g.setColor(AltosDesktopTheme.MUTED_TEXT);
             g.setFont(AltosDesktopTheme.font(Font.PLAIN, 11));
-            g.drawString("EAST / NORTH / HEIGHT  ·  BLUE ASCENT  ·  ORANGE DESCENT  ·  BREAKS = MISSING DATA", 16, h - 16);
+            String legend = aerialBase
+                ? "USGS AERIAL · FLAT PLANE AT FIRST GPS FIX · BLUE ASCENT · ORANGE DESCENT · GAPS ARE MISSING DATA"
+                : "EAST / NORTH / HEIGHT  ·  BLUE ASCENT  ·  ORANGE DESCENT  ·  BREAKS = MISSING DATA";
+            if (aerialBase) {
+                int legendWidth = Math.min(w - 20, g.getFontMetrics().stringWidth(legend) + 16);
+                g.setColor(new Color(9, 17, 25, 235));
+                g.fillRoundRect(8, h - 32, legendWidth, 26, 9, 9);
+                g.setColor(Color.WHITE);
+            }
+            g.drawString(groundStatus.isEmpty() ? legend : groundStatus, 16, h - 16);
             g.dispose();
         }
     }

@@ -36,9 +36,12 @@ public final class AltosModernStreetMap extends JPanel {
                 return t;
             }
         }, new ThreadPoolExecutor.AbortPolicy());
+    private boolean imageryOnly;
+    private Runnable imageryUpdated;
     private final javax.swing.Timer retryTimer = new javax.swing.Timer(30000, e -> {
         repaint();
         scheduleRetry();
+        if (imageryUpdated != null) imageryUpdated.run();
     });
     private final boolean aerial;
     private final File directory;
@@ -80,6 +83,22 @@ public final class AltosModernStreetMap extends JPanel {
         });
         addMouseWheelListener(e -> changeZoom(-e.getWheelRotation()));
     }
+
+    /** Off-screen imagery for the flat ground plane in the 3D view. */
+    void setImageryOnly(Runnable listener) {
+        imageryOnly = true;
+        imageryUpdated = listener;
+        setToolTipText(null);
+    }
+
+    boolean hasVisibleImagery() {
+        if (!centered) return false;
+        String key = zoom + "/" + (int)Math.floor(xForLon(longitude, zoom) / TILE)
+            + "/" + (int)Math.floor(yForLat(latitude, zoom) / TILE);
+        return images.containsKey(key);
+    }
+
+    boolean imageryDelayed() { return System.currentTimeMillis() < retryTime(zoom); }
 
     public void center(double lat, double lon) {
         latitude = Math.max(-85, Math.min(85, lat));
@@ -153,7 +172,7 @@ public final class AltosModernStreetMap extends JPanel {
 
     int getZoom() { return zoom; }
 
-    public void close() { generation++; retryTimer.stop(); network.shutdownNow(); }
+    public void close() { generation++; imageryUpdated = null; retryTimer.stop(); network.shutdownNow(); }
 
     static double xForLon(double lon, int level) { return (lon + 180) / 360 * TILE * (1 << level); }
     static double lonForX(double x, int level) {
@@ -191,7 +210,12 @@ public final class AltosModernStreetMap extends JPanel {
                         if (requestedGeneration != generation || network.isShutdown()) return;
                         BufferedImage loaded = tile(level, x, y);
                         if (loaded != null) SwingUtilities.invokeLater(new Runnable() {
-                            public void run() { images.put(key, loaded); repaint(); }
+                            public void run() {
+                                if (network.isShutdown()) return;
+                                images.put(key, loaded);
+                                repaint();
+                                if (imageryUpdated != null) imageryUpdated.run();
+                            }
                         });
                     } finally {
                         pending.remove(key);
@@ -202,6 +226,7 @@ public final class AltosModernStreetMap extends JPanel {
                                 // A stale request may have been skipped while the same tile is
                                 // still visible. Repaint gives the current viewport another chance.
                                 repaint();
+                                if (imageryUpdated != null) imageryUpdated.run();
                             }
                         });
                     }
@@ -377,7 +402,7 @@ public final class AltosModernStreetMap extends JPanel {
         g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         if (!centered) { g.dispose(); return; }
         if (aerial && (latitude < 24 || latitude > 50 || longitude < -126 || longitude > -66)) {
-            drawNotice(g, "USGS aerial covers the continental U.S.", AltosDesktopTheme.WARNING);
+            if (!imageryOnly) drawNotice(g, "USGS aerial covers the continental U.S.", AltosDesktopTheme.WARNING);
             g.dispose(); return;
         }
         int count = 1 << zoom;
@@ -433,6 +458,7 @@ public final class AltosModernStreetMap extends JPanel {
         });
         for (int[] tile : missing)
             request(zoom, tile[0], tile[1], zoom + "/" + tile[0] + "/" + tile[1]);
+        if (imageryOnly) { g.dispose(); return; }
         paintFlightTrack(g);
         Point marker = launchMarker();
         if (marker.x >= -20 && marker.x <= getWidth() + 20 &&

@@ -91,6 +91,12 @@ Included behavior:
   fixes cannot have a measured 3D track. This view does not predict a landing
   location or change flight computer behavior. Date-line crossings and
   out-of-order GPS packets are handled without drawing a false route.
+- In 3D flight path, set GROUND to USGS aerial to replace the flat grid with
+  an aerial image centered at the first recorded GPS fix. Drag to rotate and
+  use Top view to inspect the flight above the map. Switch back to Grid at
+  any time. The image is a flat plane at the first fix, not 3D terrain;
+  loading USGS tiles requires internet access unless they are already cached.
+  The grid remains available while imagery is delayed or unavailable.
 - Map data: © OpenStreetMap contributors (openstreetmap.org/copyright);
   aerial imagery: USGS / USDA NAIP (usgs.gov); offline hybrid: Altus Metrum.
 - The dashboard, tabs, dropdowns, buttons, timeline, and scrollbars retain
