@@ -28,8 +28,10 @@ To run it:
 
 1. Make sure Java 8 or newer is installed. The installed AltOS 1.9.22 files
    use Java 8 class files.
-2. Double-click Run-AltOS-Modern.bat.
-3. If Windows asks whether to allow the program to access a device, allow it.
+2. Install a JDK and the .NET 8 SDK. Run Build-AltOS-Modern.bat and
+   recovery-bridge\Build-RecoveryBridge.bat.
+3. Double-click Run-AltOS-Modern.bat.
+4. If Windows asks for Bluetooth access, allow it.
 
 The launcher starts AltOS without leaving a command-prompt or Windows Terminal
 tab open behind the application.
@@ -93,7 +95,12 @@ Included behavior:
   displays can scroll the tool cards vertically. The channel scanner can open
   the selected receiver. If Windows display scaling still makes the interface
   too small, adjust the system's Display > Scale setting and restart AltOS.
-- Java source for the six changed desktop classes is included in source/.
+- The iPhone recovery app exchanges phone GPS and live rocket telemetry over a
+  recovery-only BLE link. Keep it open in the foreground. The BLE service
+  provides no arming, firing, or flight-computer configuration commands. See
+  recovery\BLE-PROTOCOL.md and recovery\iOS\README.md.
+- Java source for the desktop UI is included as AltosUI.java,
+  AltosDesktopTheme.java, and AltosRecoveryLink.java.
 - Live flight monitoring.
 - Flight data saving, replay, graphing, and export.
 - Altimeter and ground-station configuration.

@@ -29,6 +29,11 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 	private JPanel dataWorkspace;
 	private AltosEmbeddedFlightUI monitor;
 	private boolean monitorReplay;
+	private AltosRecoveryLink recoveryLink;
+	private JPanel recoveryWorkspace;
+	private JLabel recoveryStatus;
+	private JLabel recoveryPhoneLocation;
+	private JButton recoveryConnect;
 	private JLabel sessionSummary;
 	private JLabel sidebarConnection;
 	private int pathLoadVersion;
@@ -578,6 +583,9 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 			commandButton("Load maps", "Prepare offline map data", new ActionListener() {
 				public void actionPerformed(ActionEvent e) { LoadMaps(); }
 			}, false),
+			commandButton("iPhone recovery link", "Exchange recovery GPS and telemetry with the iPhone app", new ActionListener() {
+				public void actionPerformed(ActionEvent e) { openRecoveryWorkspace(); }
+			}, true),
 			commandButton("AltOS preferences", "Set units, voices, fonts, and application preferences", new ActionListener() {
 				public void actionPerformed(ActionEvent e) { ConfigureAltosUI(); }
 			}, false),
@@ -771,6 +779,7 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 				if (monitor != null) monitor.closeWorkspace();
 				if (maps != null) maps.disposeWorkspace();
 				if (flightPath != null) flightPath.stop();
+				if (recoveryLink != null) recoveryLink.stop();
 				System.exit(0);
 			}
 		});
@@ -836,7 +845,9 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 			if (old >= 0) workspace.removeTabAt(old);
 		}
 		flightPath.startLive();
-		AltosEmbeddedFlightUI opened = new AltosEmbeddedFlightUI(voice, reader, serial, flightPath);
+		AltosFlightReader monitorReader = serial >= 0 ?
+			new AltosRecoveryReader(reader, serial) : reader;
+		AltosEmbeddedFlightUI opened = new AltosEmbeddedFlightUI(voice, monitorReader, serial, flightPath);
 		monitor = opened;
 		monitorReplay = serial < 0;
 		setSession(serial >= 0 ? "Live receiver #" + serial + " · Monitor open" :
@@ -869,6 +880,156 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 		liveScroll.getVerticalScrollBar().setUnitIncrement(18);
 		view.add(liveScroll, BorderLayout.CENTER);
 		showWorkspace("Live monitor", view);
+	}
+
+	private void openRecoveryWorkspace() {
+		if (recoveryWorkspace == null) {
+			recoveryWorkspace = new JPanel(new BorderLayout(0, AltosDesktopTheme.dp(18)));
+			recoveryWorkspace.setBackground(AltosDesktopTheme.BACKGROUND);
+			recoveryWorkspace.setBorder(new EmptyBorder(AltosDesktopTheme.dp(28),
+				AltosDesktopTheme.dp(30), AltosDesktopTheme.dp(24), AltosDesktopTheme.dp(30)));
+
+			JPanel heading = new JPanel();
+			heading.setOpaque(false);
+			heading.setLayout(new BoxLayout(heading, BoxLayout.Y_AXIS));
+			heading.add(label("RECOVERY DATA LINK", 11, Font.BOLD, AltosDesktopTheme.ACCENT_LIGHT));
+			heading.add(Box.createVerticalStrut(AltosDesktopTheme.dp(7)));
+			heading.add(label("iPhone recovery", 27, Font.BOLD, AltosDesktopTheme.TEXT));
+			heading.add(Box.createVerticalStrut(AltosDesktopTheme.dp(6)));
+			heading.add(label("Share live rocket telemetry and the phone's GPS over Bluetooth LE.",
+				12, Font.PLAIN, AltosDesktopTheme.MUTED_TEXT));
+			recoveryWorkspace.add(heading, BorderLayout.NORTH);
+
+			JPanel details = new JPanel();
+			details.setBackground(AltosDesktopTheme.SURFACE);
+			details.setBorder(BorderFactory.createCompoundBorder(
+				BorderFactory.createLineBorder(AltosDesktopTheme.BORDER),
+				new EmptyBorder(AltosDesktopTheme.dp(20), AltosDesktopTheme.dp(22),
+					AltosDesktopTheme.dp(20), AltosDesktopTheme.dp(22))));
+			details.setLayout(new BoxLayout(details, BoxLayout.Y_AXIS));
+			details.add(label("BLUETOOTH LINK", 10, Font.BOLD, AltosDesktopTheme.MUTED_TEXT));
+			details.add(Box.createVerticalStrut(AltosDesktopTheme.dp(6)));
+			recoveryStatus = label("Not connected", 16, Font.BOLD, AltosDesktopTheme.WARNING);
+			details.add(recoveryStatus);
+			details.add(Box.createVerticalStrut(AltosDesktopTheme.dp(20)));
+			details.add(label("IPHONE LOCATION", 10, Font.BOLD, AltosDesktopTheme.MUTED_TEXT));
+			details.add(Box.createVerticalStrut(AltosDesktopTheme.dp(6)));
+			recoveryPhoneLocation = label("No phone location received", 13, Font.PLAIN, AltosDesktopTheme.TEXT);
+			details.add(recoveryPhoneLocation);
+			details.add(Box.createVerticalStrut(AltosDesktopTheme.dp(20)));
+			details.add(label("ROCKET TELEMETRY", 10, Font.BOLD, AltosDesktopTheme.MUTED_TEXT));
+			details.add(Box.createVerticalStrut(AltosDesktopTheme.dp(6)));
+			details.add(label("Live telemetry is forwarded while a receiver is connected.",
+				13, Font.PLAIN, AltosDesktopTheme.TEXT));
+			details.add(Box.createVerticalStrut(AltosDesktopTheme.dp(22)));
+			recoveryConnect = AltosDesktopTheme.button("Connect iPhone");
+			AltosDesktopTheme.stylePrimary(recoveryConnect);
+			recoveryConnect.setAlignmentX(Component.LEFT_ALIGNMENT);
+			recoveryConnect.addActionListener(e -> {
+				if (recoveryLink.isRunning())
+					new Thread(() -> recoveryLink.stop(), "AltOS-BLE-stop").start();
+				else
+					recoveryLink.start();
+			});
+			details.add(recoveryConnect);
+			recoveryWorkspace.add(details, BorderLayout.CENTER);
+
+			JLabel safety = label("Recovery data only; the BLE link is unauthenticated and cannot arm, fire, or configure the flight computer. "
+				+ "Verify the phone, coordinates, vehicle, and recovery system in person; GPS can be stale or unavailable.",
+				11, Font.PLAIN, AltosDesktopTheme.MUTED_TEXT);
+			recoveryWorkspace.add(safety, BorderLayout.SOUTH);
+
+			recoveryLink = new AltosRecoveryLink(new AltosRecoveryLink.Listener() {
+				public void status(String state, String detail) {
+					SwingUtilities.invokeLater(() -> {
+						if (recoveryStatus != null) {
+							recoveryStatus.setText(state + "  ·  " + detail);
+							recoveryStatus.setForeground("ERROR".equals(state) ?
+								AltosDesktopTheme.WARNING : AltosDesktopTheme.TEXT);
+						}
+						if (recoveryConnect != null)
+							recoveryConnect.setText("CONNECTED".equals(state) ? "Disconnect iPhone" :
+								recoveryLink.isRunning() ? "Stop BLE link" : "Connect iPhone");
+					});
+				}
+
+				public void phoneLocation(final String[] fields) {
+					SwingUtilities.invokeLater(() -> {
+						if (recoveryPhoneLocation != null) {
+							try {
+								long timestamp = Long.parseLong(fields[5]);
+								long age = System.currentTimeMillis() - timestamp;
+								String freshness = age > 10000 ? "STALE" :
+									age < -5000 ? "CLOCK SKEW" : "CURRENT";
+								String time = java.text.DateFormat.getTimeInstance(
+									java.text.DateFormat.MEDIUM).format(new java.util.Date(timestamp));
+								String location = freshness + " · " + fields[1] + ", " + fields[2]
+									+ " · " + time;
+								if (!fields[3].isEmpty())
+									location += " · " + fields[3] + " m altitude";
+								if (!fields[4].isEmpty())
+									location += " · ±" + fields[4] + " m";
+								recoveryPhoneLocation.setText(location);
+								recoveryPhoneLocation.setForeground("CURRENT".equals(freshness) ?
+									AltosDesktopTheme.SUCCESS : AltosDesktopTheme.WARNING);
+							} catch (NumberFormatException exception) {
+								recoveryStatus.setText("ERROR · Invalid phone timestamp");
+								recoveryStatus.setForeground(AltosDesktopTheme.WARNING);
+							}
+						}
+					});
+				}
+			});
+		}
+		showWorkspace("iPhone recovery", recoveryWorkspace);
+	}
+
+	private final class AltosRecoveryReader extends AltosFlightReader {
+		private final AltosFlightReader delegate;
+		private final int receiverSerial;
+
+		AltosRecoveryReader(AltosFlightReader reader, int serial) {
+			delegate = reader;
+			receiverSerial = serial;
+			name = reader.name;
+			this.serial = reader.serial;
+		}
+
+		@Override public AltosCalData cal_data() { return delegate.cal_data(); }
+		@Override public java.io.File backing_file() { return delegate.backing_file(); }
+		@Override public void init() { delegate.init(); }
+		@Override public void close(boolean interrupted) { delegate.close(interrupted); }
+
+		@Override public AltosState read() throws InterruptedException, java.text.ParseException,
+			AltosCRCException, java.io.IOException {
+			AltosState state = delegate.read();
+			if (state != null && recoveryLink != null)
+				recoveryLink.sendState(state, receiverSerial);
+			return state;
+		}
+
+		@Override public void save_telemetry() { delegate.save_telemetry(); }
+		@Override public void set_frequency(double frequency)
+			throws InterruptedException, java.util.concurrent.TimeoutException {
+			delegate.set_frequency(frequency);
+		}
+		@Override public void set_telemetry(int telemetry) { delegate.set_telemetry(telemetry); }
+		@Override public double monitor_battery() throws InterruptedException { return delegate.monitor_battery(); }
+		@Override public void save_frequency() { delegate.save_frequency(); }
+		@Override public void set_telemetry_rate(int rate)
+			throws InterruptedException, java.util.concurrent.TimeoutException {
+			delegate.set_telemetry_rate(rate);
+		}
+		@Override public boolean supports_telemetry(int telemetry) {
+			return delegate.supports_telemetry(telemetry);
+		}
+		@Override public boolean has_monitor_battery() throws InterruptedException {
+			return delegate.has_monitor_battery();
+		}
+		@Override public boolean supports_telemetry_rate(int rate) {
+			return delegate.supports_telemetry_rate(rate);
+		}
+		@Override public void save_telemetry_rate() { delegate.save_telemetry_rate(); }
 	}
 
 	void ConfigureCallsign() {

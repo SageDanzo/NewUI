@@ -1,0 +1,8 @@
+/build/
+/recovery-bridge/bin/
+/recovery-bridge/obj/
+/recovery-bridge/publish/
+/recovery/android/.gradle/
+/recovery/android/build/
+/recovery/android/app/build/
+/recovery/android/local.properties

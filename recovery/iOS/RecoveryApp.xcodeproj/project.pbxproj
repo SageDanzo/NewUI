@@ -1,0 +1,34 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		A10000000000000000000001 /* RecoveryApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* RecoveryApp.swift */; };
+		A10000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* ContentView.swift */; };
+		A10000000000000000000003 /* RecoveryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* RecoveryManager.swift */; };
+		A10000000000000000000004 /* FrameCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* FrameCodec.swift */; };
+		A10000000000000000000011 /* RecoveryApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A10000000000000000000013 /* RecoveryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryManager.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* FrameCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameCodec.swift; sourceTree = "<group>"; };
+		A10000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000016 /* RecoveryApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RecoveryApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000021 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000001, A10000000000000000000002, A10000000000000000000003, A10000000000000000000004, ); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000022 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000023 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000031 /* RecoveryApp */ = {isa = PBXGroup; children = (A10000000000000000000032, A10000000000000000000033, A10000000000000000000034, ); sourceTree = "<group>"; };
+		A10000000000000000000032 /* RecoveryApp */ = {isa = PBXGroup; children = (A10000000000000000000011, A10000000000000000000012, A10000000000000000000013, A10000000000000000000014, A10000000000000000000015, ); path = RecoveryApp; sourceTree = "<group>"; };
+		A10000000000000000000033 /* Products */ = {isa = PBXGroup; children = (A10000000000000000000016, ); name = Products; sourceTree = "<group>"; };
+		A10000000000000000000034 /* Frameworks */ = {isa = PBXGroup; children = (); name = Frameworks; sourceTree = "<group>"; };
+		A10000000000000000000041 /* RecoveryApp target */ = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000051; buildPhases = (A10000000000000000000021, A10000000000000000000022, A10000000000000000000023, ); buildRules = (); dependencies = (); name = RecoveryApp; productName = RecoveryApp; productReference = A10000000000000000000016; productType = "com.apple.product-type.application"; };
+		A10000000000000000000042 /* Project */ = {isa = PBXProject; attributes = {BuildIndependentTargetsIn parallel = 1; LastUpgradeCheck = 1500; TargetAttributes = {A10000000000000000000041 = {CreatedOnToolsVersion = 15.0; }; }; }; buildConfigurationList = A10000000000000000000052; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base, ); mainGroup = A10000000000000000000031; productRefGroup = A10000000000000000000033; projectDirPath = ""; projectRoot = ""; targets = (A10000000000000000000041, ); };
+		A10000000000000000000061 /* Debug project settings */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 15.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Debug; };
+		A10000000000000000000062 /* Release project settings */ = {isa = XCBuildConfiguration; buildSettings = {ALWAYS_SEARCH_USER_PATHS = NO; CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 15.0; SDKROOT = iphoneos; SWIFT_VERSION = 5.0; }; name = Release; };
+		A10000000000000000000063 /* Debug target settings */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = RecoveryApp/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 15.0; PRODUCT_BUNDLE_IDENTIFIER = org.altusmetrum.recovery; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		A10000000000000000000064 /* Release target settings */ = {isa = XCBuildConfiguration; buildSettings = {CODE_SIGN_STYLE = Automatic; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = RecoveryApp/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 15.0; PRODUCT_BUNDLE_IDENTIFIER = org.altusmetrum.recovery; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_EMIT_LOC_STRINGS = YES; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+		A10000000000000000000051 /* Target configuration list */ = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000063, A10000000000000000000064, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000052 /* Project configuration list */ = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000061, A10000000000000000000062, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+	};
+	rootObject = A10000000000000000000042;
+}

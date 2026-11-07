@@ -26,6 +26,9 @@ try {
     $backup = Join-Path $InstallDir 'altosui-fat.jar.original-backup'
     $original = Join-Path $PSScriptRoot 'altosui-fat.jar'
     $redesigned = Join-Path $PSScriptRoot 'altosui-redesigned.jar'
+    $bridgeSource = Join-Path $PSScriptRoot 'recovery-bridge\publish\AltosRecoveryBridge.exe'
+    $bridgeInstallDir = Join-Path $InstallDir 'recovery-bridge'
+    $bridgeDestination = Join-Path $bridgeInstallDir 'AltosRecoveryBridge.exe'
 
     if (-not (Test-Path -LiteralPath $installed -PathType Leaf)) {
         throw "AltOS was not found at $installed. Check the installation folder."
@@ -37,6 +40,9 @@ try {
     if (-not (Test-Path -LiteralPath (Join-Path $InstallDir 'altoslib_14.jar') -PathType Leaf) -or
         -not (Test-Path -LiteralPath (Join-Path $InstallDir 'altosuilib_14.jar') -PathType Leaf)) {
         throw 'This installer is for AltOS 1.9.22 with the version 14 desktop libraries.'
+    }
+    if (-not $Restore -and -not (Test-Path -LiteralPath $bridgeSource -PathType Leaf)) {
+        throw 'Build recovery-bridge\publish\AltosRecoveryBridge.exe before installing the redesigned UI.'
     }
 
     $originalHash = (Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash
@@ -78,6 +84,13 @@ try {
             $result = 'Original AltOS UI restored. Open your usual AltOS shortcut.'
         }
     } else {
+        if (Test-Path -LiteralPath $bridgeDestination -PathType Leaf) {
+            if ((Get-FileHash -LiteralPath $bridgeDestination -Algorithm SHA256).Hash -ne
+                (Get-FileHash -LiteralPath $bridgeSource -Algorithm SHA256).Hash) {
+                throw 'A different recovery bridge already exists in the AltOS installation folder. Nothing was changed.'
+            }
+        }
+
         if (Test-Path -LiteralPath $backup -PathType Leaf) {
             if ((Get-FileHash -LiteralPath $backup -Algorithm SHA256).Hash -ne $originalHash) {
                 throw 'An existing backup does not match this AltOS installation. Nothing was changed.'
@@ -89,6 +102,21 @@ try {
             }
         } else {
             throw 'The installed AltOS JAR differs from the original and has no backup. Nothing was changed.'
+        }
+
+        if (-not (Test-Path -LiteralPath $bridgeDestination -PathType Leaf)) {
+            New-Item -ItemType Directory -Path $bridgeInstallDir -Force | Out-Null
+            $bridgeTemp = Join-Path $bridgeInstallDir 'AltosRecoveryBridge.exe.installing'
+            try {
+                Copy-Item -LiteralPath $bridgeSource -Destination $bridgeTemp
+                if ((Get-FileHash -LiteralPath $bridgeTemp -Algorithm SHA256).Hash -ne
+                    (Get-FileHash -LiteralPath $bridgeSource -Algorithm SHA256).Hash) {
+                    throw 'The BLE recovery bridge could not be copied completely.'
+                }
+                Move-Item -LiteralPath $bridgeTemp -Destination $bridgeDestination
+            } finally {
+                Remove-Item -LiteralPath $bridgeTemp -ErrorAction SilentlyContinue
+            }
         }
 
         if ($installedHash -eq $newHash) {
