@@ -11,6 +11,8 @@ USE YOUR NORMAL INSTALLED ALTOS SHORTCUT
    installed" in the window.
 4. Open AltOS from your usual desktop or Start menu shortcut. It will use
    this redesigned UI without a second launcher window.
+5. Check for "USGS GPS" in the bottom-left sidebar. If it is absent, the
+   installed app is still running a different JAR or another installation.
 
 The switch keeps an original backup named altosui-fat.jar.original-backup in
 your installed AltOS folder (normally C:\Program Files\AltusMetrum). It leaves
@@ -73,9 +75,18 @@ Included behavior:
   tiles cannot cover every possible zoom and location. Beyond AltOS Zoom +2,
   the app switches from hybrid to online USGS aerial and keeps the selected
   magnification; use the source menu to return to offline hybrid.
+- Opening a recorded flight automatically selects USGS aerial in Maps, centers
+  the recorded GPS route, and marks the fix selected on the 3D timeline.
+  The Map tab in a recorded-flight graph also uses USGS aerial instead of
+  the older AltOS hybrid view. This includes flights graphed after download.
+  In Maps, use Open recorded flight to select a recording and View in 3D
+  to inspect its measured path. Maps require an internet connection for imagery;
+  no track is invented for a recording without valid GPS fixes.
 - Open a recorded flight in the 3D flight path tab or connect a TeleMega and
   watch valid GPS fixes arrive. Drag to rotate, scroll to zoom, and use the
-  timeline to inspect a fix. The path is east/north/height relative to the
+  timeline or click the route to inspect a fix. Replay follows recorded GPS
+  timestamps at 1x, 5x, or 20x speed. Reset, top, and side view controls
+  simplify orientation. The path uses WGS84 east/north/up relative to the
   first GPS fix, and gaps in telemetry remain gaps. A flight without valid GPS
   fixes cannot have a measured 3D track. This view does not predict a landing
   location or change flight computer behavior. Date-line crossings and
@@ -93,7 +104,9 @@ Included behavior:
   displays can scroll the tool cards vertically. The channel scanner can open
   the selected receiver. If Windows display scaling still makes the interface
   too small, adjust the system's Display > Scale setting and restart AltOS.
-- Java source for the six changed desktop classes is included in source/.
+- Java source for the four changed desktop classes is included next to the
+  JAR: AltosUI.java, AltosFlightPathPanel.java, AltosModernMapPreload.java,
+  and AltosModernStreetMap.java. AltosDesktopTheme.java is also included.
 - Live flight monitoring.
 - Flight data saving, replay, graphing, and export.
 - Altimeter and ground-station configuration.

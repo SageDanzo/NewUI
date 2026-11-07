@@ -32,6 +32,7 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 	private JLabel sessionSummary;
 	private JLabel sidebarConnection;
 	private int pathLoadVersion;
+	private String recordedFlightName;
 	private java.util.Map<String, JButton> navigationButtons = new java.util.HashMap<String, JButton>();
 
 	public static boolean load_library(Frame frame) {
@@ -178,7 +179,7 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 		JPanel bottom = new JPanel();
 		bottom.setOpaque(false);
 		bottom.setLayout(new BoxLayout(bottom, BoxLayout.Y_AXIS));
-		bottom.add(label("AltOS 1.9.22", 10, Font.PLAIN, AltosDesktopTheme.SIDEBAR_MUTED));
+		bottom.add(label("AltOS 1.9.22  |  USGS GPS", 10, Font.PLAIN, AltosDesktopTheme.SIDEBAR_MUTED));
 		bottom.add(Box.createVerticalStrut(AltosDesktopTheme.dp(5)));
 		sidebarConnection = label("Connect receiver to begin", 10, Font.PLAIN, AltosDesktopTheme.SIDEBAR_MUTED);
 		bottom.add(sidebarConnection);
@@ -701,7 +702,7 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 		showWorkspace("Flight data", dataWorkspace);
 	}
 
-	private void openFlightPath() {
+	private void ensureFlightPath() {
 		if (flightPath == null) {
 			flightPath = new AltosFlightPathPanel();
 			flightPath.setOpenAction(new Runnable() {
@@ -710,11 +711,25 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 			flightPath.setConnectAction(new Runnable() {
 				public void run() { ConnectToDevice(); }
 			});
+			flightPath.setMapAction(new Runnable() {
+				public void run() { LoadMaps(); }
+			});
+			flightPath.setSelectionListener(new Runnable() {
+				public void run() {
+					if (maps != null) maps.selectRecordedFix(flightPath.selectedFix());
+				}
+			});
 		}
+	}
+
+	private void openFlightPath() {
+		ensureFlightPath();
 		showWorkspace("3D flight path", flightPath);
 	}
 
-	private void OpenFlightPath() {
+	private void OpenFlightPath() { openRecordedFlight(false); }
+
+	private void openRecordedFlight(boolean showOnMap) {
 		if (monitor != null) {
 			JOptionPane.showMessageDialog(this,
 				monitorReplay ? "Close the replay in Live monitor before opening another recording." :
@@ -722,12 +737,15 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 				"Monitor session active", JOptionPane.INFORMATION_MESSAGE);
 			return;
 		}
-		openFlightPath();
+		if (showOnMap) LoadMaps();
+		else openFlightPath();
+		ensureFlightPath();
 		AltosDataChooser chooser = new AltosDataChooser(this);
 		final AltosRecordSet set = chooser.runDialog();
 		if (set == null) return;
 		final int version = ++pathLoadVersion;
 		final String name = chooser.file().getName();
+		recordedFlightName = null;
 		flightPath.loadRecorded(null, "Loading " + name + "…");
 		setSession("Loading recorded flight: " + name, "Reading GPS recording");
 		new SwingWorker<java.util.List<AltosGPSTimeValue>, Void>() {
@@ -738,6 +756,12 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 				if (version != pathLoadVersion) return;
 				try {
 					flightPath.loadRecorded(get(), name);
+					recordedFlightName = name;
+					if (maps != null) {
+						maps.showRecordedFlight(flightPath.track(), name);
+						maps.selectRecordedFix(flightPath.selectedFix());
+						if (showOnMap) showWorkspace("Maps", maps);
+					}
 					setSession("Recorded flight: " + name, "Recorded flight ready");
 				}
 				catch (Exception e) {
@@ -900,7 +924,19 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 	void FireIgniter() { new AltosIgniteUI(this); }
 	void ScanChannels() { new AltosScanUI(this, true); }
 	void LoadMaps() {
-		if (maps == null) maps = new AltosModernMapPreload();
+		if (maps == null) {
+			maps = new AltosModernMapPreload();
+			maps.setOpenFlightAction(new Runnable() {
+				public void run() { openRecordedFlight(true); }
+			});
+			maps.set3DAction(new Runnable() {
+				public void run() { openFlightPath(); }
+			});
+			if (recordedFlightName != null && flightPath != null) {
+				maps.showRecordedFlight(flightPath.track(), recordedFlightName);
+				maps.selectRecordedFix(flightPath.selectedFix());
+			}
+		}
 		showWorkspace("Maps", maps);
 	}
 	void LaunchController() { new AltosLaunchUI(this); }
@@ -948,8 +984,60 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 		AltosRecordSet set = chooser.runDialog();
 		if (set == null)
 			return;
-		try { new AltosGraphUI(set, chooser.file()); }
+		try { showFlightGraph(set, chooser.file()); }
 		catch (Exception e) { showError("Cannot graph flight data", e); }
+	}
+
+	private void showFlightGraph(AltosRecordSet set, File file) throws Exception {
+			AltosGraphUI graphWindow = new AltosGraphUI(set, file);
+			int oldMapTab = graphWindow.pane.indexOfTab("Map");
+			if (oldMapTab >= 0) {
+				/* The original graph owns its statistics and plot. Replace only its
+				 * legacy Map tab; reuse its already-decoded GPS series. */
+				java.util.List<AltosGPSTimeValue> gps = graphWindow.flight_series.gps_series == null
+					? java.util.Collections.<AltosGPSTimeValue>emptyList()
+					: new java.util.ArrayList<AltosGPSTimeValue>(graphWindow.flight_series.gps_series);
+				String name = file.getName();
+				AltosFlightPathPanel graphPath = new AltosFlightPathPanel();
+				graphPath.loadRecorded(gps, name);
+				java.util.List<AltosFlightPathPanel.Fix> track = graphPath.track();
+				graphPath.stop();
+				final AltosModernMapPreload graphMap = new AltosModernMapPreload();
+				graphMap.showRecordedFlight(track, name);
+				graphMap.setOpenFlightAction(new Runnable() {
+					public void run() { openRecordedFlight(false); }
+				});
+				graphMap.set3DAction(new Runnable() {
+					public void run() {
+						if (monitor != null) {
+							JOptionPane.showMessageDialog(graphWindow,
+								"Disconnect the active monitor before opening a recorded 3D path.",
+								"Monitor session active", JOptionPane.INFORMATION_MESSAGE);
+							return;
+						}
+						ensureFlightPath();
+						flightPath.loadRecorded(gps, name);
+						recordedFlightName = name;
+						if (maps != null) maps.showRecordedFlight(flightPath.track(), name);
+						openFlightPath();
+					}
+				});
+				graphWindow.pane.setComponentAt(oldMapTab, graphMap);
+				graphWindow.pane.setTitleAt(oldMapTab, "Map · USGS");
+				Rectangle available = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+				graphWindow.setSize(Math.min(available.width, Math.max(graphWindow.getWidth(), 1050)),
+					Math.min(available.height, Math.max(graphWindow.getHeight(), 700)));
+				graphWindow.setLocationRelativeTo(this);
+				graphWindow.addWindowListener(new WindowAdapter() {
+					public void windowClosed(WindowEvent event) { graphMap.disposeWorkspace(); }
+				});
+				if (monitor == null) {
+					ensureFlightPath();
+					flightPath.loadRecorded(gps, name);
+					recordedFlightName = name;
+					if (maps != null) maps.showRecordedFlight(track, name);
+				}
+			}
 	}
 
 	private void showError(String title, Exception e) {
@@ -960,7 +1048,7 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 	public void graph_flights(AltosEepromList flights) {
 		for (AltosEepromLog flight : flights) {
 			if (flight.graph_selected && flight.file != null) {
-				try { new AltosGraphUI(AltosLib.record_set(flight.file), flight.file); }
+				try { showFlightGraph(AltosLib.record_set(flight.file), flight.file); }
 				catch (Exception e) { showError("Cannot graph downloaded flight", e); }
 			}
 		}

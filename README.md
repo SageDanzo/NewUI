@@ -40,10 +40,12 @@ Run the modern interface independently without altering your installed AltOS app
 * **Maps & Offline Support:**
   * Support for **OpenStreetMap**, **USGS Aerial Imagery** (CONUS), and **AltOS Hybrid** map sources.
   * Direct launch site coordinate targeting and fixed pin positioning.
+  * Opening a recorded flight selects USGS aerial imagery automatically and draws its measured GPS route. The recorded-flight graph window’s **Map** tab also uses this USGS view, including flights graphed after download. Click **Open recorded flight** in Maps to choose a file there; **View in 3D** opens the same track. The selected fix on the map follows the 3D timeline.
   * **Offline Pre-loading:** Save a 3 km radius around your launch area across multiple zoom levels using AltOS hybrid tiles.
 * **3D Flight Path Tracking:**
   * Real-time GPS stream monitoring or recorded telemetry playback.
-  * Full 3D rotation, zooming, and fix timeline inspection (relative to launch coordinate origin).
+  * WGS84 east/north/up conversion relative to the first valid GPS fix, with reported GPS altitude and coordinates visible for each fix.
+  * Orbit, zoom, click to select a fix, use arrow keys, and reset to top or side view. Replay uses recorded fix times with selectable 1×, 5×, and 20× speed; missing telemetry stays visibly disconnected.
   * Robust handling for dateline crossings and out-of-order GPS packets.
 * **Streamlined Navigation:**
   * Cleaned utility menu (removed unused legacy items like Kalman navigation).
@@ -59,7 +61,10 @@ Run the modern interface independently without altering your installed AltOS app
 ## File Structure
 
 ```text
-├── source/                           # Java source code for the 6 modified UI classes
+├── AltosUI.java, AltosDesktopTheme.java
+├── AltosFlightPathPanel.java           # 3D recorded/live GPS view
+├── AltosModernMapPreload.java         # Map tab and recorded-flight selection
+├── AltosModernStreetMap.java          # USGS aerial map and GPS track overlay
 ├── altosui-redesigned.jar            # Redesigned UI executable JAR
 ├── altosui-fat.jar                   # Original AltOS JAR (included for fallback/verification)
 ├── Use-Modern-UI-With-Installed-AltOS.bat  # Patch installer script
