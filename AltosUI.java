@@ -583,7 +583,7 @@ public class AltosUI extends AltosUIFrame implements AltosEepromGrapher {
 			commandButton("Load maps", "Prepare offline map data", new ActionListener() {
 				public void actionPerformed(ActionEvent e) { LoadMaps(); }
 			}, false),
-			commandButton("iPhone recovery link", "Exchange recovery GPS and telemetry with the iPhone app", new ActionListener() {
+			commandButton("phone recovery link", "Exchange recovery GPS and telemetry with the iPhone app", new ActionListener() {
 				public void actionPerformed(ActionEvent e) { openRecoveryWorkspace(); }
 			}, true),
 			commandButton("AltOS preferences", "Set units, voices, fonts, and application preferences", new ActionListener() {
